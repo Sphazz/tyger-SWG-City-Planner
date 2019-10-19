@@ -95,7 +95,7 @@ function TK_LoadImages () {
 		document.TK_Images[loop] = new Image();
 		document.TK_Images[loop].index = loop;
 		document.TK_Images[loop].onload = TK_ImageLoaded;
-		document.TK_Images[loop].onerror = TK_ImageError;
+		//document.TK_Images[loop].onerror = TK_ImageError;
 		document.TK_Images[loop].src = document.TK_ImageLocations[loop];
 		if (document.TK_Images[loop].complete) document.TK_Images[loop].onload ();
 	}
