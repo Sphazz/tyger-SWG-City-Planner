@@ -1,0 +1,117 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html id="MainDocument">
+<head>
+<!-- Code and graphics Copyright &copy; Steven Lang, 2004 -->
+<!-- Unauthorized use or distribution strictly forbidden -->
+<!-- Contact Tiaga on SWG Station forum for more details -->
+
+<meta http-equiv="Content-Script-Type" content="JavaScript">
+<title>SWG City Map Maker</title>
+<script language="JavaScript"><!--
+
+document.TK_LoadError = false;
+
+function TK_LoadDone () {
+	var loc = window.location;
+	var err = document.TK_LoadError;
+	var notloaded = document.TK_NotLoaded;
+	var mapwidth = document.mapwidth;
+	var mapheight = document.mapheight;
+	var mapdata = document.mapdata;
+	var centerx = document.centerx;
+	var centery = document.centery;
+	document.open ();
+	if (!err) {
+		document.write ('<html><head><title>SWG City Map Maker</title>');
+		document.write ('<script language="JavaScript"><!--\n');
+		document.write ('document.mapwidth = ' + mapwidth + ';\n');
+		document.write ('document.mapheight = ' + mapheight + ';\n');
+		document.write ("document.mapdata = '" + mapdata + "';\n");
+		document.write ('document.centerx = ' + centerx + ';\n');
+		document.write ('document.centery = ' + centery + ';\n');
+		document.write ('// --></scr' + 'ipt>\n');
+		document.write ('<frameset rows="236,1*"><frame name="Controlframe" src=control.html frameborder=0><frame name="Canvasframe" src=canvas.html frameborder=0>');
+		document.write ('</head></html>');
+	} else {
+		document.write ('<html><head><title>SWG City Map Maker</title></head><body bgcolor="#003040">');
+		document.write ('<P style="text-align: center; color: #00e0e0;">Transmission Error</P><P style="text-align: center; color: #00e0e0;"><a style="color: #00e0e0;" href="javascript:window.location = \'' + loc + '\';">Try again</a></P>');
+		document.write ('<P style="color: #4080c0;">Failed to load:<br>' + notloaded + '</P>');
+		document.write ('</body></html>');
+	}
+	document.close ();
+}
+
+function TK_SetProgress (pct) {
+	if (pct < 1) pct = 1;
+	var pbar = document.getElementById ('progress');
+	if (pbar != null) {
+	    pbar.style.width = Math.round (pct) + '%';
+    }
+}
+
+function TK_ImageLoaded () {
+	if (document.TK_ImageDone[this.index]) return;
+	document.TK_ImageDone[this.index] = true;
+	document.TK_ImageCount++;
+	if (document.TK_ImageCount == document.TK_ImageLocations.length) TK_LoadDone ();
+	TK_SetProgress (100 * document.TK_ImageCount / document.TK_ImageLocations.length);
+}
+
+function TK_ImageError () {
+	document.TK_LoadError = true;
+	if (document.TK_NotLoaded) {
+		document.TK_NotLoaded += "<br>" + this.src;
+	} else {
+		document.TK_NotLoaded = this.src;
+	}
+	this.onload ();
+}
+
+function TK_LoadImages () {
+	TK_SetProgress (1);
+
+	var Locations = new Array (), Structures = new Array (), loop, ext = ".png";
+
+	Structures = Structures.concat ("cb", "cc", "cg1", "cg2", "cg3", "cg4", "ch", "cl", "cm", "cs", "ct", "fc", "fe", "ff", "fs", "gg", "gl1", "gl2", "gm1", "gs1", "gs2", "mt", "nl1", "nm1", "ns1", "ns2", "tl1", "tm1", "tp", "ts1", "ts2", "cp");
+	Locations = Locations.concat ("./images/CityGrid.png", "./images/copy.png", "./images/copyglow.png", "./images/destroy.png", "./images/help.png", "./images/helpoutline.png", "./images/normal.png", "./images/rotate.png", "./images/rotateoutline.png");
+
+	for (loop = 0; loop < Structures.length; loop++) {
+		var innerloop;
+		var cur = "./structures/" + Structures[loop] + '-';
+		var curmark = "./structures/mark-" + Structures[loop] + '-';
+
+		for (innerloop = 0; innerloop < 4; innerloop++) {
+			Locations = Locations.concat (cur + innerloop + ext, curmark + innerloop + ext);
+		}
+	}
+
+	document.TK_ImageLocations = Locations;
+	document.TK_Images = new Array ();
+	document.TK_ImageDone = new Array ();
+	document.TK_ImageCount = 0;
+
+	for (loop = 0; loop < document.TK_ImageLocations.length; loop++) {
+		document.TK_ImageDone[loop] = false;
+		document.TK_Images[loop] = new Image();
+		document.TK_Images[loop].index = loop;
+		document.TK_Images[loop].onload = TK_ImageLoaded;
+		document.TK_Images[loop].onerror = TK_ImageError;
+		document.TK_Images[loop].src = document.TK_ImageLocations[loop];
+		if (document.TK_Images[loop].complete) document.TK_Images[loop].onload ();
+	}
+}
+
+// --></script>
+
+<script language="JavaScript"><!--
+TK_LoadImages();
+document.write ('<P style="text-align: center; color: #00e0e0">City planner tool loading...</P>');
+document.write ('<div style="overflow: hidden; margin-left: 25%; margin-right: 25%; width: 50%; height: 20px; background-color: #0080a0; border: 1px #00e0e0 solid;"><div id="progress" style="width: 1%; height: 20px; background-color: #00a0c0; border-right: 1px #001030 solid;"></div></div>');
+
+// --></script>
+<noscript><p>The Star Wars Galaxies City Planner tool requires a browser that supports frames and JavaScript.  Mozilla 5.0 or IE 5.0 or later with a screen resolution of 1024x768 or greater recommended.</p>
+<p>Also available, <a href="https://web.archive.org/web/20190408233932/http://tkfashion.tyger.org/">Fashions by TK</a> at its new home!</p>
+</noscript>
+</body>
+</frameset>
+</html>

@@ -1,0 +1,896 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html><head>
+<meta http-equiv="Content-Script-Type" content="JavaScript">
+<title>SWG City Map Maker</title>
+<script language="JavaScript">
+<!--
+if (document.captureEvents) {
+	if (Event.MOUSEMOVE) {
+		document.captureEvents (Event.MOUSEMOVE);
+	}
+	if (Event.MOUSEUP) {
+		document.captureEvents (Event.MOUSEUP);
+	}
+}
+
+var TK_basestyle = 'position:absolute; z-index:2; ';
+var TK_MapWidth;
+var TK_MapHeight;
+
+var Controlframe;
+
+function TK_Controlframe () {
+	if (Controlframe) return Controlframe;
+	if (parent.frames.Controlframe) {
+		Controlframe = parent.frames.Controlframe;
+	} else if (parent.Controlframe) {
+		Controlframe = parent.Controlframe;
+	} else {
+		return null;
+	}
+	return Controlframe;
+}
+
+function TK_Num(num)
+{
+	if (typeof (num) == 'string')
+		return parseInt (num);
+	return (num);
+}
+
+function TK_Setloc(div)
+{
+	var xloc = div.TK_xloc;
+	var yloc = div.TK_yloc;
+	TK_inside = 0;
+	if (TK_wasthisframe) {
+		var gridxloc = Math.round ((xloc) / 12);
+		var gridyloc = Math.round ((yloc) / 12);
+		xloc = gridxloc * 12;
+		yloc = gridyloc * 12;
+		TK_inside = 1;
+	}
+	if (div.style.pixelLeft) {
+		if (div.style.pixelLeft != xloc || div.style.pixelTop != yloc) TK_moved = 1;
+		div.style.pixelLeft = xloc;
+		div.style.pixelTop = yloc;
+	} else if (div.style.left) {
+		if (div.style.left != xloc + 'px' || div.style.top != yloc + 'px') TK_moved = 1;
+		div.style.left = xloc;
+		div.style.top = yloc;
+	} else if (div.left) {
+		if (div.left != xloc || div.top != yloc) TK_moved = 1;
+		div.left = xloc;
+		div.top = yloc;
+	} else {
+		if (div.style.pixelLeft != xloc || div.style.pixelTop != yloc) TK_moved = 1;
+		div.style.pixelLeft = xloc;
+		div.style.pixelTop = yloc;
+	}
+	div.style.position = "absolute";
+}
+
+function TK_Coords(e) {
+	this.x = 0;
+	this.y = 0;
+
+	if (!e) {
+		if (window.event) {
+			e = window.event;
+		} else {
+			return;
+		}
+	}
+
+	if (typeof (e.pageX) == 'number') {
+		this.x = e.pageX;
+		this.y = e.pageY;
+	} else {
+		if (typeof (e.clientX) == 'number') {
+			this.x = e.clientX;
+			this.y = e.clientY;
+
+			if (!((window.navigator.userAgent.indexOf('Opera') + 1) || (window.ScriptEngine && ScriptEngine().indexOf('InScript') + 1) || window.navigator.vendor == 'KDE')) {
+				if (document.body && (document.body.scrollLeft || document.body.scrollTop)) {
+					this.x += document.body.scrollLeft;
+					this.y += document.body.scrollTop;
+				} else if (document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
+					this.x += document.documentElement.scrollLeft;
+					this.y += document.documentElement.scrollTop;
+				}
+			}
+		}
+	}
+
+	if (TK_Controlframe() && TK_Controlframe().document && TK_Controlframe().document.citycenter) with (TK_Controlframe().document.citycenter)
+	{
+		var xloc = Math.round ((this.x - 12 * ((TK_MapWidth - 1) >> 1) - 6) * 8 / 12);
+		var yloc = - Math.round ((this.y - 12 * ((TK_MapHeight - 1) >> 1) - 6) * 8 / 12);
+
+		if (!TK_poslabel) return;
+		TK_poslabel.removeChild (TK_poslabel.TK_text);
+		dist = Math.round (Math.sqrt (xloc * xloc + yloc * yloc));
+		xloc += parseInt (centerx.value);
+		yloc += parseInt (centery.value);
+		TK_poslabel.TK_text = TK_poslabel.ownerDocument.createTextNode (xloc + ' ' + yloc + '   (' + dist + 'm)');
+		TK_poslabel.appendChild (TK_poslabel.TK_text);
+	}
+}
+
+function TK_OtherCoords(e) {
+	this.x = 0;
+	this.y = 0;
+
+	var theWindow = window;
+
+	if (!e) {
+		if (window.event) {
+			e = window.event;
+		} else if (event) {
+			e = event;
+		} else if (TK_Controlframe().window.event) {
+			e = TK_Controlframe().window.event;
+			theWindow = TK_Controlframe().window;
+		} else {
+			return;
+		}
+	}
+
+	if (typeof (e.pageX) == 'number') {
+		this.x = e.pageX;
+		this.y = e.pageY;
+	} else {
+		if (typeof (e.clientX) == 'number') {
+			this.x = e.clientX;
+			this.y = e.clientY;
+			if (!((window.navigator.userAgent.indexOf('Opera') + 1) || (window.ScriptEngine && ScriptEngine().indexOf('InScript') + 1) || window.navigator.vendor == 'KDE')) {
+				if (TK_Controlframe().document.body && (TK_Controlframe().document.body.scrollLeft || TK_Controlframe().document.body.scrollTop)) {
+					this.x += TK_Controlframe().document.body.scrollLeft;
+					this.y += TK_Controlframe().document.body.scrollTop;
+				} else if (TK_Controlframe().document.documentElement && (TK_Controlframe().document.documentElement.scrollLeft || TK_Controlframe().document.documentElement.scrollTop)) {
+					this.x += TK_Controlframe().document.documentElement.scrollLeft;
+					this.y += TK_Controlframe().document.documentElement.scrollTop;
+				}
+			}
+		}
+	}
+}
+
+var TK_lastcoords;
+var TK_marked;
+var TK_inside = 0;
+var TK_dragging = 0;
+var TK_moved = 0;
+var TK_dirty = 0;
+var TK_wasthisframe = 0;
+
+function TK_SetParentDivWidthToMatch(elem)
+{
+	var innerDiv = elem.parentNode;
+
+	do {
+		while (innerDiv.tagName &&
+			innerDiv.tagName != 'DIV' && innerDiv.tagName != 'TABLE')
+		{
+			innerDiv = innerDiv.parentNode;
+		}
+
+		if (elem.tagName == 'DIV')
+			width += 3;
+
+		if (elem.style.pixelWidth) {
+			innerDiv.style.pixelWidth = elem.style.pixelWidth;
+		} else if (elem.offsetWidth) {
+			innerDiv.style.pixelWidth = elem.offsetWidth;
+		} else if (elem.clip.width) {
+			innerDiv.clip.width = elem.clip.width;
+		} else {
+			return;
+		}
+	} while (innerDiv.tagName && innerDiv.tagName != 'DIV');
+
+	if (innerDiv.id) {
+		innerDiv = document.getElementById (innerDiv.id + 'R');
+
+		if (!innerDiv) return;
+
+		if (elem.style.pixelWidth) {
+			innerDiv.style.pixelWidth = elem.style.pixelWidth;
+		} else if (elem.offsetWidth) {
+			innerDiv.style.pixelWidth = elem.offsetWidth;
+		} else if (elem.clip.width) {
+			innerDiv.clip.width = elem.clip.width;
+		} else {
+			return;
+		}
+	}
+}
+
+function TK_SetParentDivWidth(elem, width)
+{
+	do {
+		do {
+			elem = elem.parentNode;
+		} while (elem.tagName && elem.tagName != 'DIV'
+			&& elem.tagName != 'TABLE');
+
+		if (elem.tagName == 'DIV')
+			width += 3;
+
+		if (elem.style.pixelWidth) {
+			elem.style.pixelWidth = width;
+		} else if (elem.style.width) {
+			elem.style.width = width;
+		} else if (elem.offsetWidth) {
+			if (TK_Num (elem.offsetWidth != width))
+			{
+				elem.style.width = width;
+				if (TK_Num (elem.offsetWidth) != width)
+					elem.style.pixelWidth = width;
+			}
+		} else if (elem.width) {
+			elem.width = width;
+		} else if (elem.clip.width) {
+			elem.clip.width = width;
+		} else {
+			return;
+		}
+	} while (elem.tagName && elem.tagName != 'DIV');
+
+	if (elem.id) {
+		var otherElem = document.getElementById (elem.id + 'S');
+		elem = document.getElementById (elem.id + 'R');
+
+		if (!elem || !otherElem) return;
+
+		if (elem.style.pixelLeft) {
+			otherElem.style.pixelWidth = TK_Num (otherElem.style.pixelWidth) + width - 3 - TK_Num (elem.style.pixelLeft);
+			elem.style.pixelLeft = width - 3;
+		} else if (elem.style.left) {
+			otherElem.style.width = TK_Num (otherElem.style.width) + width - 3 - TK_Num (elem.style.left);
+			elem.style.left = width - 3;
+		} else if (elem.left) {
+			otherElem.width = TK_Num (otherElem.width) + width - 3 - TK_Num(elem.left);
+			elem.left = width - 3;
+		} else {
+			return;
+		}
+	}}
+
+function TK_SetToolTipLabel() {
+	var theParent;
+
+	if (document.TK_ttlabeltext)
+	{
+		theParent = document.TK_ttlabeltext.parentNode;
+		theParent.removeChild (document.TK_ttlabeltext);
+	}
+	else
+	{
+		theParent = document.getElementById ('TTTitle');
+	}
+
+	document.TK_ttlabeltext = document.createTextNode (TK_marked.TK_name);
+	theParent.appendChild (document.TK_ttlabeltext);
+}
+
+function TK_TTRotateImage (type, dir, click)
+{
+	var oldImg = TK_Controlframe().document.getElementById (type + '-' + (dir % 4));
+	if (!oldImg) return null;
+	var newImg = document.createElement ('IMG');
+	newImg.setAttribute ('border', 0);
+	newImg.setAttribute ('src', oldImg.getAttribute ('src'));
+	newImg.setAttribute ('onclick', click);
+	return newImg;
+}
+var count = 0;
+
+function TK_UpdateTT() {
+	if (!TK_marked || !document.TK_NeedTTUpdate) return;
+
+	document.TK_NeedTTUpdate = false;
+
+count++;
+
+	TK_SetToolTipLabel(TK_marked);
+
+	var ttBody = document.getElementById ('TTBody');
+
+	if (ttBody.img1) ttBody.removeChild (ttBody.img1);
+	ttBody.img1 = 0;
+	if (ttBody.img2) ttBody.removeChild (ttBody.img2);
+	ttBody.img2 = 0;
+	if (ttBody.img3) ttBody.removeChild (ttBody.img3);
+	ttBody.img3 = 0;
+	ttBody.img1 = TK_TTRotateImage (TK_marked.TK_type, TK_marked.TK_dir + 1, TK_Rotate1);
+	ttBody.img2 = TK_TTRotateImage (TK_marked.TK_type, TK_marked.TK_dir + 2, TK_Rotate2);
+	ttBody.img3 = TK_TTRotateImage (TK_marked.TK_type, TK_marked.TK_dir + 3, TK_Rotate3);
+	if (ttBody.img1 && ttBody.img2 && ttBody.img3)
+	{
+		ttBody.appendChild (ttBody.img1);
+		ttBody.appendChild (ttBody.img2);
+		ttBody.appendChild (ttBody.img3);
+		if ((TK_marked.TK_dir & 1) == 0) {
+			TK_SetParentDivWidth (ttBody, TK_marked.TK_centerx * 2 + TK_marked.TK_centery * 4 + 8);
+		} else {
+			TK_SetParentDivWidth (ttBody, TK_marked.TK_centerx * 4 + TK_marked.TK_centery * 2 + 8);
+		}
+	}
+	else
+	{
+		ttBody.img1 = null;
+		ttBody.img2 = null;
+		ttBody.img3 = null;
+		TK_SetParentDivWidth (ttBody, 200);
+	}
+}
+
+function TK_Unmark() {
+	if (!TK_marked) {
+		return;
+	}
+
+	var wasMarked = TK_marked;
+	TK_marked = null;
+	TK_Controlframe().TK_AttachStructure (wasMarked);
+}
+
+function TK_Mark(newMarked) {
+	TK_Unmark ();
+	TK_marked = newMarked;
+	TK_Controlframe().TK_AttachStructure (TK_marked);
+}
+
+var TK_MouseDown = "parent.Canvasframe.TK_Drag (arguments[0], this.parentNode); return false;";
+var TK_DblClick = "TK_Rotate (1, true);"
+var TK_ToolTip = ""; // To be filled in later
+var TK_Rotate1 = "TK_Rotate (1);"
+var TK_Rotate2 = "TK_Rotate (2);"
+var TK_Rotate3 = "TK_Rotate (3);"
+
+function TK_SetImageEvents (Img)
+{
+	Img.setAttribute ('ondblclick', TK_DblClick);
+	Img.setAttribute ('onmousedown', TK_MouseDown);
+}
+
+function TK_Duplicate(e)
+{
+	tt_Hide ();
+	TK_Generate (e, TK_marked, TK_marked.TK_type, TK_marked.TK_dir, TK_marked.TK_centerx, TK_marked.TK_centery, TK_marked.TK_sizex, TK_marked.TK_sizey);
+}
+
+function TK_Destroy()
+{
+	if (!TK_marked) return;
+
+	document.TK_Canvas.removeChild (TK_marked);
+	TK_marked = 0;
+	TK_dirty = 1;
+	TK_GenerateForm ();
+}
+
+function TK_Generate(e, tag, type, dir, centerx, centery, sizex, sizey){
+	if (!document.TK_Canvas) {
+		document.TK_Canvas = document.getElementById ('Canvas');
+	}
+
+	if (TK_dragging) return;
+
+	var newDiv = tag.ownerDocument.createElement ('DIV');
+
+	newDiv.TK_type = type;
+	newDiv.TK_dir = dir;
+	newDiv.TK_sizex = sizex;
+	newDiv.TK_sizey = sizey;
+	newDiv.TK_xloc = 0;
+	newDiv.TK_yloc = 0;
+	newDiv.TK_name = tag.TK_name;
+	newDiv.TK_centerx = centerx;
+	newDiv.TK_centery = centery;
+	var parentStruct = TK_Controlframe().document.getElementById (type + '-0');
+	if (parentStruct)
+	{
+		newDiv.TK_SC_top = parentStruct.TK_SC_top;
+		newDiv.TK_SC_right = parentStruct.TK_SC_right;
+		newDiv.TK_SC_bottom = parentStruct.TK_SC_bottom;
+		newDiv.TK_SC_left = parentStruct.TK_SC_left;
+	}
+	newDiv.setAttribute ('style', TK_basestyle + 'width: ' + sizex + 'px; height: ' + sizey + 'px; left: 1px; top: 1px;');
+
+	newDiv.style.pixelWidth = sizex;
+	newDiv.style.pixelHeight = sizey;
+
+	if (newDiv.ownerDocument == document) {
+		document.TK_Canvas.appendChild (newDiv);
+		TK_Mark (newDiv);
+		TK_Drag (e, newDiv);
+	} else {
+		TK_OtherDrag (e, newDiv);
+	}
+	newDiv.TK_xloc = TK_lastcoords.x - centerx;
+	newDiv.TK_yloc = TK_lastcoords.y - centery;
+	TK_Setloc (newDiv);
+
+	TK_moved = 0;
+
+	return false;
+}
+
+function TK_Drag(e, targetDiv) {
+	if (TK_dragging)
+	{
+		return false;
+	}
+
+	tt_ReallyHide ();
+
+	if (targetDiv.tagName != 'DIV') targetDiv = targetDiv.parentNode;
+
+	if (TK_marked != targetDiv)
+	{
+		TK_Mark (targetDiv);
+		document.TK_NeedTTUpdate = true;
+	}
+
+	TK_dragging = targetDiv;
+
+	TK_lastcoords = new TK_Coords (e);
+	TK_wasthisframe = 1;
+
+	TK_Setloc (targetDiv);
+
+	TK_Controlframe().tt_notnow = true;
+	//tt_notnow = true;
+	document.onmousemove = TK_Move;
+	TK_Controlframe().document.onmousemove = TK_OtherMove;
+	document.onmouseup = TK_Drop;
+	TK_Controlframe().document.onmouseup = TK_OtherDrop;
+
+	TK_moved = 0;
+
+	return false;
+}
+
+function TK_OtherDrag (e, targetDiv)
+{
+	TK_Controlframe().tt_ReallyHide ();
+
+	TK_lastcoords = new TK_OtherCoords (e);
+	TK_wasthisframe = 0;
+
+	TK_dragging = targetDiv;
+	TK_Mark (targetDiv);
+
+	TK_Controlframe().tt_notnow = true;
+	//tt_notnow = true;
+	document.onmousemove = TK_Move;
+	TK_Controlframe().document.onmousemove = TK_OtherMove;
+	document.onmouseup = TK_Drop;
+	TK_Controlframe().document.onmouseup = TK_OtherDrop;
+
+	TK_Controlframe().document.body.appendChild (targetDiv);
+
+	TK_moved = 0;
+}
+
+function TK_copytodocument (toDocument, oldDiv)
+{
+	var newDiv = toDocument.createElement ('DIV');
+	TK_marked = newDiv;
+	newDiv.TK_name = oldDiv.TK_name;
+	newDiv.TK_centerx = oldDiv.TK_centerx;
+	newDiv.TK_centery = oldDiv.TK_centery;
+	newDiv.TK_type = oldDiv.TK_type;
+	newDiv.TK_dir = oldDiv.TK_dir;
+	newDiv.TK_sizex = oldDiv.TK_sizex;
+	newDiv.TK_sizey = oldDiv.TK_sizey;
+	newDiv.TK_xloc = oldDiv.TK_xloc;
+	newDiv.TK_yloc = oldDiv.TK_yloc;
+	newDiv.TK_SC_top = oldDiv.TK_SC_top;
+	newDiv.TK_SC_right = oldDiv.TK_SC_right;
+	newDiv.TK_SC_bottom = oldDiv.TK_SC_bottom;
+	newDiv.TK_SC_left = oldDiv.TK_SC_left;
+	newDiv.setAttribute ('style', TK_basestyle + 'width: 12px; height: 12px; left: 1px; top: 1px;');
+	return newDiv;
+}
+
+function TK_Move(e) {
+	var coords = new TK_Coords (e);
+
+	if (!TK_dragging) {
+		return true;
+	}
+
+	if (!TK_wasthisframe)
+	{
+		TK_wasthisframe = 1;
+		var newDragging = TK_copytodocument (document, TK_dragging);
+		TK_dragging.parentNode.removeChild (TK_dragging);
+		if (TK_marked == TK_dragging) TK_marked = newDragging;
+		TK_dragging = newDragging;
+		document.TK_Canvas.appendChild (newDragging);
+		TK_Controlframe().TK_AttachStructure (newDragging);
+	}
+
+	TK_dragging.TK_xloc += coords.x - TK_lastcoords.x;
+	TK_dragging.TK_yloc += coords.y - TK_lastcoords.y;
+	TK_lastcoords = coords;
+	TK_Setloc (TK_dragging);
+	TK_dirty = 1;
+
+	return false;
+}
+
+function TK_OtherMove(e) {
+	var coords = new TK_OtherCoords (e);
+
+	if (!TK_dragging) {
+		return true;
+	}
+
+	if (TK_wasthisframe)
+	{
+		TK_wasthisframe = 0;
+		var newDragging = TK_copytodocument (TK_Controlframe().document, TK_dragging);
+		TK_dragging.parentNode.removeChild (TK_dragging);
+		if (TK_marked == TK_dragging) TK_marked = newDragging;
+		TK_dragging = newDragging;
+		TK_Controlframe().document.body.appendChild (newDragging);
+		TK_Controlframe().TK_AttachStructure (newDragging);
+	}
+
+	TK_dragging.TK_xloc += coords.x - TK_lastcoords.x;
+	TK_dragging.TK_yloc += coords.y - TK_lastcoords.y;
+	TK_lastcoords = coords;
+	TK_Setloc (TK_dragging);
+	return false;
+}
+
+function TK_Drop(e) {
+	tt_ReallyHide ();
+
+	document.onmousemove = TK_Coords;
+	TK_Controlframe().document.onmousemove = null;
+	document.onmouseup = null;
+	TK_Controlframe().document.onmouseup = null;
+	TK_Controlframe().tt_notnow = false;
+	//tt_notnow = false;
+
+	if (!TK_dragging || !TK_moved) {
+		TK_dragging = 0;
+		TK_UpdateTT ();
+		TK_ToolTip (e);
+		return true;
+	}
+
+	var oldDragging = TK_dragging;
+
+	if (!TK_wasthisframe) {
+		TK_Controlframe().document.body.removeChild (TK_dragging);
+		TK_marked = 0;
+	} else if (!TK_inside) {
+		document.TK_Canvas.removeChild (TK_dragging);
+		TK_marked = 0;
+	}
+
+	TK_dragging = 0;
+
+	if (oldDragging) {
+		TK_Setloc (oldDragging);
+	}
+
+	TK_GenerateForm ();
+
+	if (!TK_moved) return true;
+
+	return false;
+}
+
+function TK_OtherDrop(e) {
+	document.onmousemove = TK_Coords;
+	TK_Controlframe().document.onmousemove = null;
+	document.onmouseup = null;
+	TK_Controlframe().document.onmouseup = null;
+	TK_Controlframe().tt_notnow = false;
+	//tt_notnow = false;
+
+	if (!TK_dragging)
+		return true;
+
+	if (TK_wasthisframe) {
+		document.body.removeChild (TK_dragging);
+	} else {
+		TK_Controlframe().document.body.removeChild (TK_dragging);
+	}
+
+	TK_GenerateForm ();
+
+	TK_dragging = 0;
+	TK_marked = 0;
+	TK_moved = 0;
+}
+
+function TK_Rotate(N) {
+	if (!TK_marked) {
+		return;
+	}
+
+	tt_ReallyHide ();
+
+	TK_marked.TK_dir = (TK_marked.TK_dir + N) % 4;
+
+	TK_Controlframe().TK_AttachStructure (TK_marked);
+	TK_dirty = 1;
+	TK_GenerateForm ();
+}
+
+function TK_ConvertOldList(value) {
+	var list = value.split ('+');
+
+	if (list.length == 1) {
+		list = value.split ('-');
+		list = list.join ('+');
+		list = list.split ('++');
+		list = list.join ('+-');
+		list = list.split ('+');
+	}
+
+	if (list.length % 4 == 0) {
+		var loop;
+		var newlist = new Array;
+
+		for (loop = 0; loop < list.length; loop += 4) {
+			list[loop + 1] = Number (list[loop + 1]) - 57;
+			list[loop + 2] = Number (list[loop + 2]) - 56;
+			newlist = newlist.concat (list[loop] + '.' + list[loop + 1] + '.' + list[loop + 2] + '.' + list[loop + 3]);
+		}
+		list = newlist;
+	} else {
+		list = new Array;
+	}
+
+	return list;
+}
+
+function TK_GenerateForm() {
+	if (!TK_dirty)
+		return;
+	var loop = 0;
+	var str="";
+	var str2="";
+	var thisNode;
+	while (thisNode = document.TK_Canvas.childNodes[loop]) {
+		if (thisNode.TK_type) with (thisNode) {
+			var xloc = Math.round (TK_xloc / 12);
+			var yloc = Math.round (TK_yloc / 12);
+
+			switch (TK_dir) {
+			case 0:
+				thisNode.TK_SC_top && (yloc -= TK_SC_top);
+				thisNode.TK_SC_left && (xloc -= TK_SC_left);
+				break;
+			case 1:
+				thisNode.TK_SC_left && (yloc -= TK_SC_left);
+				thisNode.TK_SC_bottom && (xloc -= TK_SC_bottom);
+				break;
+			case 2:
+				thisNode.TK_SC_bottom && (yloc -= TK_SC_bottom);
+				thisNode.TK_SC_right && (xloc -= TK_SC_right);
+				break;
+			case 3:
+				thisNode.TK_SC_right && (yloc -= TK_SC_right);
+				thisNode.TK_SC_top && (xloc -= TK_SC_top);
+				break;
+			}
+			if (xloc > -thisNode.TK_sizex / 12 && yloc > -thisNode.TK_sizey / 12 && xloc < TK_MapWidth && yloc < TK_MapHeight)
+				str2 += '+' + TK_type + '+' + xloc + '+' + yloc + '+' + TK_dir;
+			xloc -= (TK_MapWidth - 1) >> 1;
+			yloc -= (TK_MapHeight - 1) >> 1;
+			str += '/' + TK_type + '.' + xloc + '.' + yloc + '.' + TK_dir;
+		}
+		loop++;
+	}
+
+	var structurelist = TK_Controlframe().document.getElementById ('fakestructurelist');
+	structurelist.setAttribute ('value', str.substr (1));
+	structurelist.value = structurelist.defaultValue = str.substr (1);
+
+	TK_Controlframe().document.options.structurelist.setAttribute ('value', str2.substr (1));
+	TK_Controlframe().document.options.structurelist.defaultValue = str2.substr (1);
+
+	TK_dirty = 0;
+}
+
+function TK_GenerateFromForm() {
+	var loop = 0;
+	if (!document.TK_Canvas) {
+		document.TK_Canvas = document.getElementById ('Canvas');
+	}
+
+	TK_dirty = 1;
+
+// If the other frame hasn't loaded, nothing to do.  It will call this function when it's done loading.
+	if (!TK_Controlframe() || !TK_Controlframe().document || !TK_Controlframe().document.getElementById || !TK_Controlframe().document.body || !TK_Controlframe().document.body.setAttribute) return;
+	if (!TK_Controlframe().document.getElementById ('fakestructurelist')) {
+		return;
+	}
+
+	var Grid = document.getElementById ('Grid');
+	Grid.style.left = -((150 - TK_MapWidth) >> 1) * 12;
+	Grid.style.top = -((150 - TK_MapHeight) >> 1) * 12;
+	document.TK_Canvas.style.width = TK_MapWidth * 12;
+	document.TK_Canvas.style.height = TK_MapHeight * 12;
+
+	var structurelist = TK_Controlframe().document.getElementById ('fakestructurelist');
+
+	var oldvalue = structurelist.defaultValue;
+	var list = unescape (structurelist.value).toLowerCase ();
+
+	list = list.split(' ').join('+');
+
+	while (list.indexOf ('++') >= 0) {
+		list = list.split('++').join('+');
+	}
+
+	while (list.indexOf ('<') >= 0 && list.indexOf ('>') > list.indexOf ('<')) {
+		list = list.split(/<[^>]*>/).join('');
+		break;
+	}
+
+	structurelist.value = list;
+	structurelist.defaultValue = list;
+
+	if (list == 0) {
+		list = new Array;
+	} else {
+		list = list.split ('/');
+	}
+
+	if (list.length == 1 && (structurelist.value.indexOf ('.') < 0)) {
+		list = TK_ConvertOldList (structurelist.value);
+	}
+
+	while (document.TK_Canvas.childNodes[loop]) {
+		if (document.TK_Canvas.childNodes[loop].TK_type) {
+			document.TK_Canvas.removeChild (document.TK_Canvas.childNodes[loop]);
+		} else {
+			loop++;
+		}
+	}
+	TK_wasthisframe = 1;
+
+	for (loop = 0; loop < list.length; loop ++)
+	{
+		var newstruct = list[loop].split ('.');
+
+		if (newstruct.length < 4) {
+			continue;
+		}
+
+		newstruct[1] = Number (newstruct[1]);
+		newstruct[2] = Number (newstruct[2]);
+		newstruct[3] = Number (newstruct[3]);
+		if (newstruct[1] > -85 && newstruct[1] <= 76 &&
+			newstruct[2] > -85 && newstruct[2] <= 76 &&
+			newstruct[3] >= 0 && newstruct[3] <= 3)
+		{
+			var newDiv = document.createElement ('DIV');
+			newDiv.TK_type = newstruct[0];
+			newDiv.TK_dir = newstruct[3];
+			newDiv.TK_name = 'Error';
+			var srcimg = TK_Controlframe().document.getElementById (newstruct[0] + '-' + newstruct[3]);
+			if (!srcimg) {
+				newDiv.TK_dir = 0;
+			}
+			newDiv.TK_sizex = 120;
+			newDiv.TK_sizey = 120;
+			newDiv.TK_centerx = 60;
+			newDiv.TK_centery = 60;
+			srcimg = TK_Controlframe().document.getElementById (newstruct[0] + '-0');
+			if (srcimg) {
+				if (!srcimg.TK_name)
+					srcimg = srcimg.parentNode;
+				if (!srcimg.TK_name)
+					srcimg = srcimg.parentNode;
+				newDiv.TK_name = srcimg.TK_name;
+				newDiv.TK_sizex = srcimg.TK_width * 12;
+				newDiv.TK_sizey = srcimg.TK_height * 12;
+				newDiv.TK_centerx = newDiv.TK_sizex / 2;
+				newDiv.TK_centery = newDiv.TK_sizey / 2;
+				newDiv.TK_SC_top = srcimg.TK_SC_top;
+				newDiv.TK_SC_right = srcimg.TK_SC_right;
+				newDiv.TK_SC_bottom = srcimg.TK_SC_bottom;
+				newDiv.TK_SC_left = srcimg.TK_SC_left;
+			}
+			newDiv.TK_xloc = (newstruct[1] + ((TK_MapWidth - 1) >> 1)) * 12;
+			newDiv.TK_yloc = (newstruct[2] + ((TK_MapHeight - 1) >> 1)) * 12;
+			switch (newDiv.TK_dir) {
+			case 0:
+				newDiv.TK_SC_top && (newDiv.TK_yloc += newDiv.TK_SC_top * 12);
+				newDiv.TK_SC_left && (newDiv.TK_xloc += newDiv.TK_SC_left * 12);
+				break;
+			case 1:
+				newDiv.TK_SC_left && (newDiv.TK_yloc += newDiv.TK_SC_left * 12);
+				newDiv.TK_SC_bottom && (newDiv.TK_xloc += newDiv.TK_SC_bottom * 12);
+				break;
+			case 2:
+				newDiv.TK_SC_bottom && (newDiv.TK_yloc += newDiv.TK_SC_bottom * 12);
+				newDiv.TK_SC_right && (newDiv.TK_xloc += newDiv.TK_SC_right * 12);
+				break;
+			case 3:
+				newDiv.TK_SC_right && (newDiv.TK_yloc += newDiv.TK_SC_right * 12);
+				newDiv.TK_SC_top && (newDiv.TK_xloc += newDiv.TK_SC_top * 12);
+				break;
+			}
+			newDiv.setAttribute ('style', TK_basestyle + 'width: 24px; height: 24px; left: 1px; top: 1px;');
+			document.TK_Canvas.appendChild (newDiv);
+			TK_Setloc (newDiv);
+			TK_Controlframe().TK_AttachStructure (newDiv);
+		}
+	}
+	TK_GenerateForm ();
+}
+
+function TK_TT (elem)
+{
+	var tip = '';
+	//elem.T_DELAY = 1000;
+	elem.T_DELAY = 100;
+	elem.T_TITLE = '<center id="TTTitle"></center>';
+	elem.T_STATICCLICK = true;
+	elem.T_SHADOWCOLOR = '#7f7f7f';
+	elem.T_WIDTH = 100;
+	elem.T_BGCOLOR = '#939393';
+	elem.T_BORDERPUSH = true;
+	elem.T_CENTER = true;
+	return ('<div><center><img src="images/normal.png" ' +
+		'alt="Destroy" onclick="TK_Destroy (false);" ' +
+		'onmouseover="this.src=\'images/destroy.png\';" ' +
+		'onmouseout="this.src=\'images/normal.png\';">' +
+		'<img src="images/normal.png" alt="Duplicate" ' +
+		'onclick="TK_Duplicate (arguments[0]);" ' +
+		'onmouseover="this.src=\'images/copyglow.png\';" ' +
+		'onmouseout="this.src=\'images/normal.png\';">' +
+		'</center></div><br><div id="TTBody"></div>');
+}
+
+function TK_OnLoad () {
+	if (TK_Controlframe() && TK_Controlframe().TK_LoadDone)
+		TK_Controlframe().TK_LoadDone ();
+}
+
+</script>
+</head>
+<div id="Canvas" style="position:absolute; width:1356px; height: 1356px; z-index:1; left: 0px; top: 0px; overflow: hidden;">
+<img id="Grid" src="./images/CityGrid.png" border="0" width="1800" height="1800" style="position: relative; left: -216px; top: -216px;" title="">
+</div>
+
+<!-- A fake to generate a tooltip -->
+
+<script src="./scripts/wz_tooltip.js" type="text/javascript" language="javascript1.2"></script><div id="tOoLtIp83" style="position:absolute;z-index:1010;left:0px;top:0px;width:103px;visibility:hidden;" onmouseover="tt_DontHide ();" onmouseout="tt_CheckHide ();"><table border="0" cellpadding="0" cellspacing="0" bgcolor="#003399" width="100"><tbody><tr><td style="padding-left:3px;"><font color="#ffffff" face="arial,helvetica,sans-serif" style="color:#ffffff;font-family:arial,helvetica,sans-serif;font-size:11px;"><b><center id="TTTitle"></center></b></font></td></tr><tr><td><table border="0" cellpadding="3" cellspacing="1" width="100%"><tbody><tr><td bgcolor="#939393" style="padding:3px;"><font color="#000066" face="arial,helvetica,sans-serif" style="color:#000066;font-family:arial,helvetica,sans-serif;font-size:11px;font-weight:normal;"><div><center><img src="./images/normal_1.png" alt="Destroy" onclick="TK_Destroy (false);" onmouseover="this.src=&#39;images/destroy.png&#39;;" onmouseout="this.src=&#39;images/normal.png&#39;;"><img src="./images/normal_1.png" alt="Duplicate" onclick="TK_Duplicate (arguments[0]);" onmouseover="this.src=&#39;images/copyglow.png&#39;;" onmouseout="this.src=&#39;images/normal.png&#39;;"></center></div><br><div id="TTBody"></div></font></td></tr></tbody></table></td></tr></tbody></table><div id="tOoLtIp83R" style="position:absolute;background:#7f7f7f;left:100px;top:4px;width:3px;height:1px;overflow:hidden;-moz-opacity:0.85;"></div><div id="tOoLtIp83S" style="position:relative;background:#7f7f7f;left:4px;top:0px;width:96px;height:3px;overflow:hidden;-moz-opacity:0.85;"></div></div>
+<script language="JavaScript"><!--
+
+function TK_cleanup () {
+	var functions = false;
+
+	var Dummy = document.getElementById ('Dummy');
+	TK_ToolTip = Dummy.onmouseover;
+	Dummy.parentNode.removeChild (Dummy);
+
+	if (typeof (document.body.getAttribute ('onload')) == 'function') {
+		TK_MouseDown = new Function (TK_MouseDown);
+		TK_DblClick = new Function (TK_DblClick);
+		TK_Rotate1 = new Function (TK_Rotate1);
+		TK_Rotate2 = new Function (TK_Rotate2);
+		TK_Rotate3 = new Function (TK_Rotate3);
+	}
+
+	document.onmousemove = TK_Coords;
+}
+TK_cleanup ();
+--></script>
+
+
+</body><div style="padding: 0px; margin: 3px 3px 20px; background: padding-box padding-box rgb(248, 248, 255); border: 3px solid rgba(242, 242, 242, 0.6); border-radius: 2px; box-shadow: rgb(102, 102, 102) 0px 0px 2px; visibility: visible; display: block; z-index: 2147483647; left: 1110px; top: 0px; right: auto; bottom: auto; width: 977px; height: 977px; position: fixed !important; box-sizing: content-box !important; max-width: none !important; max-height: none !important;"><img alt="" src="./images/CityGrid.png" style="display: block; background: none; position: relative; width: 100%; height: 100%; max-width: inherit; max-height: inherit; margin: 0px; padding: 0px; border: 0px; visibility: inherit !important; cursor: none;"><video poster="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=" autoplay="" style="display: none; background: none; position: relative; width: 100%; height: 100%; max-width: inherit; max-height: inherit; margin: 0px; padding: 0px; border: 0px; box-shadow: rgb(241, 101, 41) 0px 0px 0px 1px; visibility: inherit !important;"></video><div style="left: 0px; right: auto; display: block; cursor: default; position: absolute; width: auto; height: auto; border: 0px; white-space: nowrap; font: 13px/1.4em &quot;Trebuchet MS&quot;, sans-serif; box-shadow: rgb(221, 221, 221) 0px 0px 1px inset; padding: 0px 4px; border-radius: 3px; background: rgba(0, 0, 0, 0.75) !important; color: rgb(255, 255, 255) !important; top: -18px;"><b style="display: none; transition: background-color 0.1s ease 0s; border-radius: 3px; padding: 0px 2px;"></b> <b style="display: none;"></b> <span style="color: inherit; display: inline;"></span></div></div><img alt="" draggable="false" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOng9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pbiBub25lIj48Zz48cGF0aCBpZD0icCIgZD0iTTMzIDQyYTEgMSAwIDAgMSA1NS0yMCAzNiAzNiAwIDAgMC01NSAyMCIvPjx1c2UgeDpocmVmPSIjcCIgdHJhbnNmb3JtPSJyb3RhdGUoNzIgNTAgNTApIi8+PHVzZSB4OmhyZWY9IiNwIiB0cmFuc2Zvcm09InJvdGF0ZSgxNDQgNTAgNTApIi8+PHVzZSB4OmhyZWY9IiNwIiB0cmFuc2Zvcm09InJvdGF0ZSgyMTYgNTAgNTApIi8+PHVzZSB4OmhyZWY9IiNwIiB0cmFuc2Zvcm09InJvdGF0ZSgyODggNTAgNTApIi8+PGFuaW1hdGVUcmFuc2Zvcm0gYXR0cmlidXRlTmFtZT0idHJhbnNmb3JtIiB0eXBlPSJyb3RhdGUiIHZhbHVlcz0iMzYwIDUwIDUwOzAgNTAgNTAiIGR1cj0iMS44cyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiLz48L2c+PC9zdmc+" style="padding: 5px; background-clip: padding-box; width: 38px; height: 38px; z-index: 2147483647; display: none; left: auto; top: auto; right: auto; bottom: auto; margin: 0px; transition: background-color 0.5s ease 0s, opacity 0.2s ease 0s, top 0.15s ease-out 0s, left 0.15s ease-out 0s; border-radius: 50% !important; box-shadow: rgb(166, 166, 166) 0px 0px 5px 1px !important; position: fixed !important; box-sizing: border-box !important; opacity: 0;"></html>
