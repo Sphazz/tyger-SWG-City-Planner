@@ -57,7 +57,7 @@ function TK_ImageLoaded () {
 	TK_SetProgress (100 * document.TK_ImageCount / document.TK_ImageLocations.length);
 }
 
-function TK_ImageError () {
+/*function TK_ImageError () {
 	document.TK_LoadError = true;
 	if (document.TK_NotLoaded) {
 		document.TK_NotLoaded += "<br>" + this.src;
@@ -65,7 +65,7 @@ function TK_ImageError () {
 		document.TK_NotLoaded = this.src;
 	}
 	this.onload ();
-}
+}*/
 
 function TK_LoadImages () {
 	TK_SetProgress (1);
