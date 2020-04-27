@@ -1,4 +1,4 @@
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<!DOCTYPE html>
 <html id="MainDocument">
 <head>
 <!-- Code and graphics Copyright &copy; Steven Lang, 2004 -->
@@ -7,7 +7,7 @@
 
 <meta http-equiv="Content-Script-Type" content="JavaScript">
 <title>SWG City Map Maker</title>
-<script language="JavaScript"><!--
+<script type="text/javascript"><!--
 
 document.TK_LoadError = false;
 
@@ -57,7 +57,7 @@ function TK_ImageLoaded () {
 	TK_SetProgress (100 * document.TK_ImageCount / document.TK_ImageLocations.length);
 }
 
-/*function TK_ImageError () {
+function TK_ImageError () {
 	document.TK_LoadError = true;
 	if (document.TK_NotLoaded) {
 		document.TK_NotLoaded += "<br>" + this.src;
@@ -65,7 +65,7 @@ function TK_ImageLoaded () {
 		document.TK_NotLoaded = this.src;
 	}
 	this.onload ();
-}*/
+}
 
 function TK_LoadImages () {
 	TK_SetProgress (1);
@@ -95,7 +95,7 @@ function TK_LoadImages () {
 		document.TK_Images[loop] = new Image();
 		document.TK_Images[loop].index = loop;
 		document.TK_Images[loop].onload = TK_ImageLoaded;
-		//document.TK_Images[loop].onerror = TK_ImageError;
+		document.TK_Images[loop].onerror = TK_ImageError;
 		document.TK_Images[loop].src = document.TK_ImageLocations[loop];
 		if (document.TK_Images[loop].complete) document.TK_Images[loop].onload ();
 	}
@@ -103,14 +103,13 @@ function TK_LoadImages () {
 
 // --></script>
 
-<script language="JavaScript"><!--
+<script type="text/javascript"><!--
 TK_LoadImages();
-document.write ('<P style="text-align: center; color: #00e0e0">City planner tool loading...</P>');
+document.write ('<p style="text-align: center; color: #00e0e0">City planner tool loading...</p>');
 document.write ('<div style="overflow: hidden; margin-left: 25%; margin-right: 25%; width: 50%; height: 20px; background-color: #0080a0; border: 1px #00e0e0 solid;"><div id="progress" style="width: 1%; height: 20px; background-color: #00a0c0; border-right: 1px #001030 solid;"></div></div>');
 
 // --></script>
 <noscript><p>The Star Wars Galaxies City Planner tool requires a browser that supports frames and JavaScript.  Mozilla 5.0 or IE 5.0 or later with a screen resolution of 1024x768 or greater recommended.</p>
-<p>Also available, <a href="https://web.archive.org/web/20190408233932/http://tkfashion.tyger.org/">Fashions by TK</a> at its new home!</p>
 </noscript>
 </body>
 </frameset>

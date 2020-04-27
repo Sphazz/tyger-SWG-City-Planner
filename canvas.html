@@ -1,7 +1,8 @@
-<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<!DOCTYPE html>
 <html><head>
 <meta http-equiv="Content-Script-Type" content="JavaScript">
 <title>SWG City Map Maker</title>
+<script src="scripts/wz_tooltip.js" type="text/javascript" language="javascript1.2"></script>
 <script language="JavaScript">
 <!--
 if (document.captureEvents) {
@@ -561,7 +562,7 @@ function TK_Drop(e) {
 	if (!TK_dragging || !TK_moved) {
 		TK_dragging = 0;
 		TK_UpdateTT ();
-		TK_ToolTip (e);
+		//TK_ToolTip (e);
 		return true;
 	}
 
@@ -875,9 +876,9 @@ function TK_OnLoad () {
 function TK_cleanup () {
 	var functions = false;
 
-	var Dummy = document.getElementById ('Dummy');
-	TK_ToolTip = Dummy.onmouseover;
-	Dummy.parentNode.removeChild (Dummy);
+	//var Dummy = document.getElementById ('Dummy');
+	//TK_ToolTip = Dummy.onmouseover;
+	//Dummy.parentNode.removeChild (Dummy);
 
 	if (typeof (document.body.getAttribute ('onload')) == 'function') {
 		TK_MouseDown = new Function (TK_MouseDown);
@@ -893,4 +894,4 @@ TK_cleanup ();
 --></script>
 
 
-</body><div style="padding: 0px; margin: 3px 3px 20px; background: padding-box padding-box rgb(248, 248, 255); border: 3px solid rgba(242, 242, 242, 0.6); border-radius: 2px; box-shadow: rgb(102, 102, 102) 0px 0px 2px; visibility: visible; display: block; z-index: 2147483647; left: 1110px; top: 0px; right: auto; bottom: auto; width: 977px; height: 977px; position: fixed !important; box-sizing: content-box !important; max-width: none !important; max-height: none !important;"><img alt="" src="./images/CityGrid.png" style="display: block; background: none; position: relative; width: 100%; height: 100%; max-width: inherit; max-height: inherit; margin: 0px; padding: 0px; border: 0px; visibility: inherit !important; cursor: none;"><video poster="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=" autoplay="" style="display: none; background: none; position: relative; width: 100%; height: 100%; max-width: inherit; max-height: inherit; margin: 0px; padding: 0px; border: 0px; box-shadow: rgb(241, 101, 41) 0px 0px 0px 1px; visibility: inherit !important;"></video><div style="left: 0px; right: auto; display: block; cursor: default; position: absolute; width: auto; height: auto; border: 0px; white-space: nowrap; font: 13px/1.4em &quot;Trebuchet MS&quot;, sans-serif; box-shadow: rgb(221, 221, 221) 0px 0px 1px inset; padding: 0px 4px; border-radius: 3px; background: rgba(0, 0, 0, 0.75) !important; color: rgb(255, 255, 255) !important; top: -18px;"><b style="display: none; transition: background-color 0.1s ease 0s; border-radius: 3px; padding: 0px 2px;"></b> <b style="display: none;"></b> <span style="color: inherit; display: inline;"></span></div></div><img alt="" draggable="false" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOng9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWluWU1pbiBub25lIj48Zz48cGF0aCBpZD0icCIgZD0iTTMzIDQyYTEgMSAwIDAgMSA1NS0yMCAzNiAzNiAwIDAgMC01NSAyMCIvPjx1c2UgeDpocmVmPSIjcCIgdHJhbnNmb3JtPSJyb3RhdGUoNzIgNTAgNTApIi8+PHVzZSB4OmhyZWY9IiNwIiB0cmFuc2Zvcm09InJvdGF0ZSgxNDQgNTAgNTApIi8+PHVzZSB4OmhyZWY9IiNwIiB0cmFuc2Zvcm09InJvdGF0ZSgyMTYgNTAgNTApIi8+PHVzZSB4OmhyZWY9IiNwIiB0cmFuc2Zvcm09InJvdGF0ZSgyODggNTAgNTApIi8+PGFuaW1hdGVUcmFuc2Zvcm0gYXR0cmlidXRlTmFtZT0idHJhbnNmb3JtIiB0eXBlPSJyb3RhdGUiIHZhbHVlcz0iMzYwIDUwIDUwOzAgNTAgNTAiIGR1cj0iMS44cyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiLz48L2c+PC9zdmc+" style="padding: 5px; background-clip: padding-box; width: 38px; height: 38px; z-index: 2147483647; display: none; left: auto; top: auto; right: auto; bottom: auto; margin: 0px; transition: background-color 0.5s ease 0s, opacity 0.2s ease 0s, top 0.15s ease-out 0s, left 0.15s ease-out 0s; border-radius: 50% !important; box-shadow: rgb(166, 166, 166) 0px 0px 5px 1px !important; position: fixed !important; box-sizing: border-box !important; opacity: 0;"></html>
+</body></html>
