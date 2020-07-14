@@ -57,8 +57,8 @@ function TK_Setloc(div)
 		div.style.pixelTop = yloc;
 	} else if (div.style.left) {
 		if (div.style.left != xloc + 'px' || div.style.top != yloc + 'px') TK_moved = 1;
-		div.style.left = xloc;
-		div.style.top = yloc;
+		div.style.left = xloc+"px";
+		div.style.top = yloc+"px";
 	} else if (div.left) {
 		if (div.left != xloc || div.top != yloc) TK_moved = 1;
 		div.left = xloc;
